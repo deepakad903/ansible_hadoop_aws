@@ -1,0 +1,16 @@
+- name: "provisioning the instances "
+  ec2:
+          zone: "ap-south-1a"
+          assign_public_ip: "yes"
+          ec2_access_key: "{{ u }}"
+          ec2_secret_key: "{{ p }}"
+          count: "{{ item.num }}"
+          image: "ami-04b1ddd35fd71475a"
+          instance_tags:
+                  Name: "{{ item.name }}" 
+          instance_type: "t2.micro"
+          key_name: "hadoop_slave_key"
+          region: "ap-south-1"
+          state: "present"
+          wait: yes
+          vpc_subnet_id: "subnet-678b820f"             

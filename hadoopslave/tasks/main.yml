@@ -1,0 +1,69 @@
+---
+# tasks file for hadoopslave
+- name: "copying the jdk file "
+  copy:
+          src: "/root/jdk-8u171-linux-x64.rpm"
+          dest: "/root"
+- name: "copying the hadoop file"
+  copy:
+          src: "/root/hadoop-1.2.1-1.x86_64.rpm"
+          dest: "/root"
+- name: "checking the java file is already installed or not "
+  shell: "java -version"
+  ignore_errors: yes
+  register: C
+- debug:
+        msg: "jdk is already installed"
+  when: "C.rc == 0"
+- name: "installing jdk file"
+  shell: "rpm -i /root/jdk-8u171-linux-x64.rpm"
+  ignore_errors: yes
+  when: "C.rc != 0"
+- name: "checking the hadoop software is installed or not"
+  shell: "hadoop version"
+  ignore_errors: yes
+  register: D
+- debug:
+        msg: "hadoop is already installed"
+  when: "D.rc == 0"
+- name: "installing hadoop file"
+  shell:  "rpm -ivh /root/hadoop-1.2.1-1.x86_64.rpm --force"
+  when: "D.rc != 0"
+- name: "creating a new directory for datanode "
+  file:
+          state: directory
+          path: "/DN1"
+- name: "updating the hdfs conf file"
+  blockinfile:
+          state: "present"
+          path: "/etc/hadoop/hdfs-site.xml"
+          block: |
+                  <property>
+                  <name>dfs.data.dir</name>
+                  <value>/DN1</value>
+                  </property>  
+          insertafter: "<configuration>"
+- name: "updating core conf file"
+  blockinfile:
+          state: "present"
+          path: "/etc/hadoop/core-site.xml"
+          block: |
+                  <property>
+                  <name>fs.default.name</name>
+                  {% for ip in groups['tag_Name_Namenode'] %}
+                  <value>hdfs://{{ ip }}:9001</value>
+                  {% endfor %}
+                  </property>
+          insertbefore: "</configuration>" 
+- name: "starting the datanode"
+  command: "hadoop-daemon.sh start datanode"
+  ignore_errors: yes
+  register: X 
+- debug:
+        msg: "datanode is already running"
+  when: X.rc != 0
+- name: "showing the report of cluster"
+  shell: "hadoop dfsadmin -report"
+  register: E
+- debug:
+        var: E

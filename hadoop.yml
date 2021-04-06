@@ -1,0 +1,34 @@
+- hosts: "localhost"
+  vars_files:
+          - "secret.yml"
+  vars_prompt:
+          - name: "num_item"
+            prompt: "enter the number of Datanodes"
+            private: no 
+  tasks:
+          - name: "provisioning the nodes"
+            include_tasks: "/root/arth_ws/ansible/test2.yml"
+            loop:
+                    - { name: 'Datanode', num: "{{ num_item }}" }
+                    - { name: 'Namenode', num: 1 }
+                    - { name: 'Client', num: 1 }
+          - name: "waiting for the instances to ready for the use "
+            pause:
+                  seconds: 60
+          - name: "refreshing the inventory"
+            meta: "refresh_inventory"
+- hosts: "tag_Name_Namenode"
+  vars_prompt:
+          - name: "dr"
+            prompt: "enter the namenode's directory name"
+            private: no
+
+  roles:
+          - role: "hadoop"
+- hosts: "tag_Name_Datanode"
+  roles:
+          - role: "hadoopslave"
+- hosts: "tag_Name_Client"
+  roles:
+          - role: "hadoopclient"
+
